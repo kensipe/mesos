@@ -199,10 +199,18 @@ int main(int argc, char** argv)
                 << " when using ZooKeeper";
       }
 
-      // TODO(vinod): Add support for "--zk=file://".
       Try<URL> url = URL::parse(zk.get());
-      if (url.isError()) {
-        EXIT(1) << "Error parsing ZooKeeper URL: " << url.error();
+      if (strings::startsWith(zk.get(), "file://")) {
+        const string& path = zk.get().substr(7);
+        const Try<string> read = os::read(path);
+        if (read.isError()) {
+              EXIT(1) << "Failed to read from file at '" + path + "'";
+        }
+        url = URL::parse(read.get());
+      } else {
+          if (url.isError()) {
+              EXIT(1) << "Error parsing ZooKeeper URL: " << url.error();
+          }
       }
 
       log = new Log(
