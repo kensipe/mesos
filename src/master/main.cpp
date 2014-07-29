@@ -199,16 +199,18 @@ int main(int argc, char** argv)
                 << " registry when using ZooKeeper";
       }
 
-      // TODO URL::parse to handle "file://" URLs to avoid redundant code
-      Try<URL> url = URL::parse(zk.get());
+      // TODO(kensipe): Add support for "--zk=file://".
+      string zkUrlString = zk.get();
       if (strings::startsWith(zk.get(), "file://")) {
         const string& path = zk.get().substr(7);
         const Try<string> read = os::read(path);
         if (read.isError()) {
-          EXIT(1) << "Failed to read from file at '" + path + "'";
+          EXIT(1) << "Failed to read from file at '" + path + "': "
+                  << read.error();
         }
-        url = URL::parse(read.get());
+        zkUrlString = read.get();
       }
+      Try<URL> url = URL::parse(zkUrlString);
       if (url.isError()) {
         EXIT(1) << "Error parsing ZooKeeper URL: " << url.error();
       }
